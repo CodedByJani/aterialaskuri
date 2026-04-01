@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DaySection from "./components/Days";
 import WeekSummary from "./components/WeekSum";
-import { getWeekFieldTotals } from "./utils/calculations";
+import { getWeekFieldTotals, getDayTotal } from "./utils/calculations";
 
 import "./App.css";
 
@@ -189,6 +189,8 @@ export default function App() {
             date.setDate(monday.getDate() + i);
             const dateLabel = `${date.getDate()}.${date.getMonth()+1}.`;
 
+      const dayTotal = getDayTotal(weekData[dayName] || {});
+
             return (
               <DaySection
                 key={dayName}
@@ -197,6 +199,7 @@ export default function App() {
                 restaurants={restaurants}
                 weekData={weekData}
                 updateValue={updateValue}
+                dayTotal={dayTotal}
               />
             );
           })}
