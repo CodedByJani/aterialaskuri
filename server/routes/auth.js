@@ -4,6 +4,7 @@ const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
 const { Resend } = require('resend')
 const MagicToken = require('../models/MagicToken')
+const ActivityLog = require('../models/ActivityLog')
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -47,6 +48,13 @@ router.get('/verify', async (req, res) => {
             { email: "testikäyttäjä@koulu.fi" },
             process.env.JWT_SECRET
         )
+
+        await ActivityLog.create({
+            email: "testikäyttäjä@koulu.fi",
+            action: 'LOGIN',
+            details: 'User signed in with demo login.'
+        })
+
         return res.json({ token: sessionToken, email: "testikäyttäjä@koulu.fi" })
     }
 
@@ -57,6 +65,12 @@ router.get('/verify', async (req, res) => {
         const sessionToken = jwt.sign({ email: found.email }, process.env.JWT_SECRET, { expiresIn: '90d' })
 
         await MagicToken.deleteOne({ _id: found._id })
+
+        await ActivityLog.create({
+            email: found.email,
+            action: 'LOGIN',
+            details: 'User signed in with email.'
+        })
 
         res.json({ token: sessionToken, email: found.email })
         console.log(sessionToken)

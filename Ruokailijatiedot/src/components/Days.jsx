@@ -5,13 +5,17 @@ export default function DaySection({
   dateLabel,
   restaurants,
   weekData,
-  updateValue
+  updateValue,
+  dayTotal
 }) {
   return (
     <>
       <tr className="day-header">
-        <td colSpan="4">
+        <td colSpan="3">
           {dayName} {dateLabel}
+        </td>
+        <td>
+          <span style={{ float: 'right' }}>Päivä yhteensä: {dayTotal}</span>
         </td>
       </tr>
 

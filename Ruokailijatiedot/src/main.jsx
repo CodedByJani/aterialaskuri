@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import App from './App.jsx'
 import Login from './components/Login.jsx'
 import Verify from './components/Verify.jsx'
+import AdminLogs from './components/AdminLogs.jsx'
 import './App.css'
 
 const PrivateRoute = ({ children }) => {
@@ -16,14 +17,15 @@ createRoot(document.getElementById('root')).render(
         <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/verify" element={<Verify />} />
-            <Route
-                path="/"
+            <Route path="/" element={<PrivateRoute><App /></PrivateRoute>}/>
+            <Route 
+                path="/logs"
                 element={
                     <PrivateRoute>
-                        <App />
+                        <AdminLogs />
                     </PrivateRoute>
                 }
-               />
+            />
         </Routes>
     </BrowserRouter>
 )

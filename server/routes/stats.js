@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const DailyStat = require('../models/DailyStat')
 const authToken = require('../middleware/auth')
+const ActivityLog = require('../models/ActivityLog')
 
 router.get('/', authToken, async (req, res) => {
     const { startDate, endDate } = req.query
@@ -64,7 +65,24 @@ router.patch('/update-count', authToken, async (req, res) => {
         }
 
         await dailyStat.save()
+
+        await ActivityLog.create({
+            email: req.user.email,
+            action: 'UPDATE_MEAL',
+            details: `Päivitti ravintolan ${unitName} aterian '${mealType}' määräksi ${parsedCount} (Päivämäärä: ${date})`
+        })
+
         res.json(dailyStat)
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ error: err.message })
+    }
+})
+
+router.get('/logs', authToken, async (req, res) => {
+    try {
+        const logs = await ActivityLog.find().sort({ timestamp: -1 }).limit(100)
+        res.json(logs)
     } catch (err) {
         console.error(err)
         res.status(500).json({ error: err.message })

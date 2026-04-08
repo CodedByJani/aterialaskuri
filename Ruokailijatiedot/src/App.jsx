@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Toaster, toast } from 'react-hot-toast';
+import { useNavigate } from "react-router-dom"
 import DaySection from "./components/Days";
 import WeekSummary from "./components/WeekSum";
 import { getWeekFieldTotals, getDayTotal } from "./utils/calculations";
@@ -35,6 +37,9 @@ function formatDate(dateObj) {
 
 export default function App() {
 
+  const navigate = useNavigate()
+  const timeoutsRef = useRef({})
+
   const createEmptyWeek = () => {
     const data = {};
     days.forEach(day => {
@@ -51,6 +56,7 @@ export default function App() {
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [reports, setReports] = useState({});
+
 
   const today = new Date();
   today.setDate(today.getDate() + weekOffset * 7);
@@ -130,39 +136,64 @@ export default function App() {
       }
     }));
 
-    const token = localStorage.getItem("sessionToken");
-    const dayIndex = days.indexOf(dayName);
-    const selectedDate = new Date(monday);
-    selectedDate.setDate(monday.getDate() + dayIndex);
+    const timeoutKey = `${dayName}-${restaurant}-${field}`
 
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL}/stats/update-count`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
-        body: JSON.stringify({
-          date: formatDate(selectedDate),
-          unitName: restaurant,
-          mealType: field,
-          newCount: Number(value)
-        })
-      });
-    } catch (err) {
-      console.error("Failed to update backend:", err);
+    if (timeoutsRef.current[timeoutKey]) {
+      clearTimeout(timeoutsRef.current[timeoutKey])
     }
+
+    timeoutsRef.current[timeoutKey] = setTimeout(async () => {
+      const token = localStorage.getItem("sessionToken");
+      const dayIndex = days.indexOf(dayName);
+      const selectedDate = new Date(monday);
+      selectedDate.setDate(monday.getDate() + dayIndex);
+
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/stats/update-count`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` })
+          },
+          body: JSON.stringify({
+            date: formatDate(selectedDate),
+            unitName: restaurant,
+            mealType: field,
+            newCount: Number(value)
+          })
+        });
+        
+
+        if (!res.ok) throw new Error("Virhe palvelimella");
+
+        // Näytetään toast, mutta annetaan sille ID, jotta ruudulle ei tule montaa päällekkäistä viestiä
+        toast.success('Tallennettu!', { id: 'tallennus-toast', duration: 2000 });
+
+      } catch (err) {
+        console.error("Failed to update backend:", err);
+        toast.error('Virhe tallennuksessa!', { id: 'tallennus-toast' });
+      }
+    }, 800)
   };
 
   const fieldTotals = getWeekFieldTotals(weekData);
 
   return (
     <div className="app-container">
+      <Toaster position="top-center" />
       <div className="app-header">
         <h1>Ruokailijatiedot</h1>
-        <button onClick={handleLogout} className="logout-button">
-          Kirjaudu ulos
-        </button>
+        <div>
+          <button 
+            onClick={() => navigate("/logs")}
+            style={{ backgroundColor: "#10b981", marginRight: "10px" }}
+          >Näytä lokit
+          </button>
+
+          <button onClick={handleLogout} className="logout-button">
+            Kirjaudu ulos
+          </button>
+        </div>
       </div>
 
       <h2>
