@@ -56,6 +56,7 @@ export default function App() {
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [reports, setReports] = useState({});
+  const [showOnlyLounas, setShowOnlyLounas] = useState(false);
 
 
   const today = new Date();
@@ -177,6 +178,10 @@ export default function App() {
   };
 
   const fieldTotals = getWeekFieldTotals(weekData);
+// Lisätty: suodatetaan näytettävät ravintolat ja ateriatyypit
+const filteredRestaurants = showOnlyLounas
+  ? Object.fromEntries(Object.entries(restaurants).map(([k, v]) => [k, v.filter(f => f === "lounas")]))
+  : restaurants;
 
   return (
     <div className="app-container">
@@ -184,6 +189,13 @@ export default function App() {
       <div className="app-header">
         <h1>Ruokailijatiedot</h1>
         <div>
+          {/* Lisätty: suodatinnappi lounaiden näyttämiseen */}
+          <button
+            onClick={() => setShowOnlyLounas(!showOnlyLounas)}
+            style={{ backgroundColor: showOnlyLounas ? "#6366f1" : "#64748b", marginRight: "10px" }}
+          >
+            {showOnlyLounas ? "Näytä kaikki" : "Näytä vain lounaat"}
+          </button>
           <button 
             onClick={() => navigate("/logs")}
             style={{ backgroundColor: "#10b981", marginRight: "10px" }}
@@ -227,7 +239,7 @@ export default function App() {
                 key={dayName}
                 dayName={dayName}
                 dateLabel={dateLabel}
-                restaurants={restaurants}
+                restaurants={filteredRestaurants}
                 weekData={weekData}
                 updateValue={updateValue}
                 dayTotal={dayTotal}
