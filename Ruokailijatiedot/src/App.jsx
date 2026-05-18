@@ -5,6 +5,7 @@ import DaySection from "./components/Days";
 import WeekSummary from "./components/WeekSum";
 import { getWeekFieldTotals, getDayTotal } from "./utils/calculations";
 
+
 import "./App.css";
 
 const days = ["Ma", "Ti", "Ke", "To", "Pe"];
@@ -187,13 +188,14 @@ const filteredRestaurants = showOnlyLounas
     <div className="app-container">
       <Toaster position="top-center" />
       <div className="app-header">
-        <h1>Ruokailijatiedot</h1>
+        {/* Lisätty ikoni otsikon viereen react-kirjastosta */}
+        <h1>🍽️ Ruokailijatiedot</h1>
         <div>
           {/* Lisätty: suodatinnappi lounaiden näyttämiseen */}
           <button
             onClick={() => setShowOnlyLounas(!showOnlyLounas)}
-            style={{ backgroundColor: showOnlyLounas ? "#6366f1" : "#64748b", marginRight: "10px" }}
-          >
+          style={{ backgroundColor: showOnlyLounas ? "#6366f1" : "#2563eb", marginRight: "10px" }}
+          > 
             {showOnlyLounas ? "Näytä kaikki" : "Näytä vain lounaat"}
           </button>
           <button 
@@ -222,7 +224,7 @@ const filteredRestaurants = showOnlyLounas
       </div>
 
       <h3>
-        Viikon yhteensä: <WeekSummary fieldTotals={fieldTotals} />
+        Viikon ateriat yhteensä: <WeekSummary fieldTotals={fieldTotals} />
       </h3>
 
       <table>

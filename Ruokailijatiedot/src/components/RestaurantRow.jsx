@@ -20,10 +20,14 @@ export default function RestaurantRow({
 
             <input
               type="number"
+              min="0"
               value={values[field] || ""}
-              onChange={(e) =>
-                updateValue(dayName, restaurant, field, e.target.value)
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "" || Number(val) >= 0) {
+                updateValue(dayName, restaurant, field, val)
               }
+            }}  
               className={values[field] ? "filled" : ""}
             />
           </div>
