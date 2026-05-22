@@ -40,7 +40,7 @@ router.post("/magic-link", async (req, res) => {
 
     const loginUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
 
-    console.log("✅ Magic link sent to:", email);
+    console.log("✅ Magic link sent");
 
     await resend.emails.send({
       from: "Ruokailusovellus <onboarding@resend.dev>",
@@ -99,7 +99,7 @@ router.get("/verify", async (req, res) => {
     const sessionToken = jwt.sign(
       { email: found.email },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }, // ✅ Changed from 90d to 24h
+      { expiresIn: "24h" },
     );
 
     await MagicToken.deleteOne({ _id: found._id });
@@ -110,7 +110,7 @@ router.get("/verify", async (req, res) => {
       details: "User signed in with magic link.",
     });
 
-    console.log("✅ User logged in:", found.email);
+    console.log("✅ User logged in");
 
     res.json({
       token: sessionToken,
