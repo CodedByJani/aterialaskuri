@@ -27,13 +27,13 @@ router.post("/magic-link", async (req, res) => {
 
   try {
     // Check if token already exists for this email (prevent spam)
-    const existingToken = await MagicToken.findOne({ email });
-    if (existingToken) {
-      return res.status(429).json({
-        error:
-          "Linkki on jo lähetetty tälle sähköpostille. Yritä uudelleen 15 minuutin kuluttua.",
-      });
-    }
+    //const existingToken = await MagicToken.findOne({ email });
+    //if (existingToken) {
+    //return res.status(429).json({
+    //error:
+    //"Linkki on jo lähetetty tälle sähköpostille. Yritä uudelleen 15 minuutin kuluttua.",
+    //});
+    //}
 
     const token = crypto.randomBytes(32).toString("hex");
     await MagicToken.create({ email, token });
