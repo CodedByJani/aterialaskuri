@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import DaySection from "./components/Days";
 import WeekSummary from "./components/WeekSum";
 import { getWeekFieldTotals, getDayTotal } from "./utils/calculations";
+import HistorySelector from "./components/HistorySelector";
 
 
 import "./App.css";
@@ -40,6 +41,9 @@ export default function App() {
 
   const navigate = useNavigate()
   const timeoutsRef = useRef({})
+//historian button kontrollit
+  const [showHistorySelect, setShowHistorySelect] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState("");
 
   const createEmptyWeek = () => {
     const data = {};
@@ -85,12 +89,8 @@ export default function App() {
     const fetchWeek = async () => {
       try {
         const token = localStorage.getItem("sessionToken");
-        const startDate = formatDate(monday)
-        const end = new Date(monday);
-        end.setDate(monday.getDate() + 4);
-        const endDate = formatDate(end)
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/stats?startDate=${startDate}&endDate=${endDate}`,
+          `${import.meta.env.VITE_API_URL}/stats`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }
@@ -100,7 +100,20 @@ export default function App() {
         const data = await res.json();
         const weekObj = createEmptyWeek();
 
-        data.forEach(dayStat => {
+        const filteredWeek = data.filter(dayStat => {
+          const statDate = new Date(dayStat.date);
+
+          const start = new Date(monday);
+          start.setHours(0, 0, 0, 0);
+
+          const end = new Date(monday);
+          end.setDate(end.getDate() + 4);
+          end.setHours(23, 59, 59, 999);
+
+          return statDate >= start && statDate <= end;
+        });
+
+        filteredWeek.forEach(dayStat => {
           const jsDay = new Date(dayStat.date).getDay();
           const dayIndex = jsDay === 0 ? 6 : jsDay - 1;
           const dayName = days[dayIndex];
@@ -204,11 +217,33 @@ const filteredRestaurants = showOnlyLounas
           >Näytä lokit
           </button>
 
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <button
+              onClick={() => setShowHistorySelect(prev => !prev)}
+              style={{ backgroundColor: "#8b5cf6", marginRight: "10px" }}
+            >
+              Katso historia
+            </button>
+
+            {showHistorySelect && (
+              <div style={{ position: "absolute", top: "110%", right: 0, zIndex: 1000 }}>
+                <HistorySelector
+                  restaurants={restaurants}
+                  selectedUnit={selectedUnit}
+                  setSelectedUnit={setSelectedUnit}
+                  onClose={() => setShowHistorySelect(false)}
+                />
+              </div>
+            )}
+          </div>
+
           <button onClick={handleLogout} className="logout-button">
             Kirjaudu ulos
           </button>
         </div>
       </div>
+
+      
 
       <h2>
         Viikko {weekNumber} – {monthName} {year}

@@ -20,19 +20,56 @@ router.get("/", authToken, async (req, res) => {
   }
 });
 
+// Hakee tietyn ravintolan historialliset ateriatiedot
+router.get("/history", authToken, async (req, res) => {
+  const { unitName, startDate, endDate } = req.query;
+
+  if (!unitName) {
+    return res.status(400).json({ error: "Yksikkö on pakollinen parametri." });
+  }
+
+  try {
+    const query = {};
+
+    if (startDate && endDate) {
+      query.date = { $gte: startDate, $lte: endDate };
+    }
+
+    const stats = await DailyStat.find(query).sort({ date: 1 });
+
+    const history = stats.map((day) => {
+      const unit = day.units.find((u) => u.unitName === unitName);
+      return {
+        date: day.date,
+        meals: unit?.meals || [],
+      };
+    });
+
+    res.json(history);
+  } catch (err) {
+    console.error("❌ History fetch error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post("/daily", authToken, async (req, res) => {
   try {
     const newDay = new DailyStat(req.body);
     await newDay.save();
     res.status(201).json(newDay);
   } catch (err) {
-    console.error("❌ Daily stat save error:", err.message); // <-- muutettu
+    console.error("❌ Daily stat save error:", err.message);
     res.status(400).json({ error: "Day already exists or invalid data" });
   }
 });
 
 router.patch("/update-count", authToken, async (req, res) => {
   let { date, unitName, mealType, newCount } = req.body;
+
+  if (!date || !unitName || !mealType || newCount === undefined) {
+    return res.status(400).json({ error: "Puuttuvia kenttiä havaittu." });
+  }
+
   const parsedCount = Number(newCount);
 
   if (isNaN(parsedCount) || parsedCount < 0) {
@@ -73,7 +110,7 @@ router.patch("/update-count", authToken, async (req, res) => {
 
     res.json(dailyStat);
   } catch (err) {
-    console.error("❌ Update count error:", err.message); // <-- muutettu
+    console.error("❌ Update count error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -83,7 +120,7 @@ router.get("/logs", authToken, async (req, res) => {
     const logs = await ActivityLog.find().sort({ timestamp: -1 }).limit(100);
     res.json(logs);
   } catch (err) {
-    console.error("❌ Activity log fetch error:", err.message); // <-- muutettu
+    console.error("❌ Activity log fetch error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

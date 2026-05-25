@@ -6,7 +6,11 @@ const { Resend } = require("resend");
 const MagicToken = require("../models/MagicToken");
 const ActivityLog = require("../models/ActivityLog");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Resend on null testiympäristössä
+const resend =
+  process.env.NODE_ENV === "test"
+    ? null
+    : new Resend(process.env.RESEND_API_KEY);
 
 /**
  * POST /api/auth/magic-link
@@ -42,11 +46,12 @@ router.post("/magic-link", async (req, res) => {
 
     console.log("✅ Magic link sent");
 
-    await resend.emails.send({
-      from: "Ruokailusovellus <onboarding@resend.dev>",
-      to: ["aterialaskuri.testi@gmail.com"],
-      subject: "Kirjautuminen ruokasovellukseen",
-      html: `
+    if (process.env.NODE_ENV !== "test") {
+      await resend.emails.send({
+        from: "Ruokailusovellus <onboarding@resend.dev>",
+        to: ["aterialaskuri.testi@gmail.com"],
+        subject: "Kirjautuminen ruokasovellukseen",
+        html: `
                 <h2>Hei!</h2>
                 <p>Voit kirjautua sisään sovellukseen klikkaamalla alla olevaa linkkiä.</p>
                 <p><strong>Linkki on voimassa tunnin ajan.</strong></p>
@@ -60,7 +65,8 @@ router.post("/magic-link", async (req, res) => {
                 <hr>
                 <p><small>Jos et tilannut tätä viestiä, voit jättää sen huomiotta.</small></p>
             `,
-    });
+      });
+    }
 
     res.json({
       message: "Kirjautumislinkki lähetetty sähköpostiisi",
@@ -95,7 +101,6 @@ router.get("/verify", async (req, res) => {
         .json({ error: "Linkki on vanhentunut tai virheellinen" });
     }
 
-    // Generate JWT with 24 hour expiration (not 90 days!)
     const sessionToken = jwt.sign(
       { email: found.email },
       process.env.JWT_SECRET,

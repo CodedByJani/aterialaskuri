@@ -18,6 +18,28 @@ on auttaa koulun ruokaloita ja heidän henkilökuntaansa seuraamaan ja tilastoim
 
 ---
 
+## TestausYmpäristö
+
+### Riippuvuudet
+* npm install --save-dev jest supertest cross-env
+
+Tee `.env.test` backend kansioon
+
+```
+MONGODB_URI_TEST=merkkijonoo_tahan
+JWT_SECRET=eitarvitseselittää
+PORT=3001
+```
+VARMISTA ETTÄ MONGODB_URI_TEST SISÄLTÄÄ ERI DATABASE NIMEN ESIM ATERIALASKURI_TEST ETTEI TESTIDATAT JA OIKEAT MENE SEKAISIN
+
+`Package.json` täytyy sisältää seuraava:
+```
+"scripts": {
+    "test": "cross-env NODE_ENV=test jest --runInBand"
+}
+```
+---
+
 ## Paikallinen kehitys
 
 ### 1. Esivaatimukset

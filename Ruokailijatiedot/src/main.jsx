@@ -5,6 +5,7 @@ import Login from './components/Login.jsx'
 import Verify from './components/Verify.jsx'
 import AdminLogs from './components/AdminLogs.jsx'
 import './App.css'
+import HistoryView from './components/HistoryView.jsx'
 
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem('sessionToken')
@@ -23,6 +24,14 @@ createRoot(document.getElementById('root')).render(
                 element={
                     <PrivateRoute>
                         <AdminLogs />
+                    </PrivateRoute>
+                }
+            />
+            <Route
+                path="/history-view"
+                element={
+                    <PrivateRoute>
+                        <HistoryView />
                     </PrivateRoute>
                 }
             />
