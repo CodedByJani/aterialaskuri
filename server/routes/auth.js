@@ -19,11 +19,11 @@ router.post("/magic-link", async (req, res) => {
     return res.status(400).json({ error: "Sähköposti puuttuu" });
   }
 
-  if (!email.endsWith("@esedu.fi")) {
-    return res.status(400).json({
-      error: "Käytä esedu.fi sähköpostia",
-    });
-  }
+  //if (!email.endsWith("@esedu.fi")) {
+  //return res.status(400).json({
+  //error: "Käytä esedu.fi sähköpostia",
+  //});
+  //}
 
   try {
     // Check if token already exists for this email (prevent spam)
@@ -44,7 +44,7 @@ router.post("/magic-link", async (req, res) => {
 
     await resend.emails.send({
       from: "Ruokailusovellus <onboarding@resend.dev>",
-      to: [email],
+      to: ["aterialaskuri.testi@gmail.com"],
       subject: "Kirjautuminen ruokasovellukseen",
       html: `
                 <h2>Hei!</h2>
