@@ -5,8 +5,11 @@ const jwt = require('jsonwebtoken')
 const { Resend } = require('resend')
 const MagicToken = require('../models/MagicToken')
 const ActivityLog = require('../models/ActivityLog')
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Muutin että resend on null testiympäristössä mutta muuten luodaan uusi
+const resend =
+    process.env.NODE_ENV === 'test'
+        ? null
+        : new Resend(process.env.RESEND_API_KEY)
 
 router.post('/magic-link', async (req, res) => {
     const { email } = req.body
@@ -19,21 +22,25 @@ router.post('/magic-link', async (req, res) => {
         const loginUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`
 
         console.log("DEBUGGING: Link being sent is:", loginUrl)
-
-        await resend.emails.send({
-            from: 'Ruokailusovellus <onboarding@resend.dev>',
-            to: [email],
-            subject: 'Kirjautuminen ruokasovellukseen',
-            text: `Hei!
-            
-            Voit kirjautua sisään sovellukseen klikkaamalla alla olevaa linkkiä.
-            Linkki on voimassa tunnin ajan.
-            
-            ${loginUrl}
-            
-            Jos et tilannut tätä viestiä, voit jättää sen huomiotta.`,
-        })
-
+        
+        // Ettei resendiä luoda testiympäristössä
+        if (process.env.NODE_ENV !== 'test'){
+            // Tästä puuttui const result niin sovellus palautti virheen eikä gmailia lähetetty
+            const result = await resend.emails.send({
+                from: 'Ruokailusovellus <onboarding@resend.dev>',
+                to: [email],
+                subject: 'Kirjautuminen ruokasovellukseen',
+                text: `Hei!
+                
+                Voit kirjautua sisään sovellukseen klikkaamalla alla olevaa linkkiä.
+                Linkki on voimassa tunnin ajan.
+                
+                ${loginUrl}
+                
+                Jos et tilannut tätä viestiä, voit jättää sen huomiotta.`,
+            })
+            console.log("RESEND RESULT:", result)
+        }
         res.json({ message: "Linkki lähetetty!" })
     } catch (err) {
         res.status(500).json({ error: err.message })

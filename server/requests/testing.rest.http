@@ -1,0 +1,71 @@
+### päivä 1
+POST http://localhost:3001/api/stats/daily
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFydHR1LnRhYXZldHRpQGdtYWlsLmNvbSIsImlhdCI6MTc3OTIxMjI1NiwiZXhwIjoxNzg2OTg4MjU2fQ.rO4eCYuB1U8FLWHD8owYa68XalvKbrCrZS8pGIg_l1I
+
+{
+  "date": "2025-05-18",
+  "units": [
+    {
+      "unitName": "Ilona",
+      "meals": [
+        { "type": "lounas", "count": 12 },
+        { "type": "puuro", "count": 5 }
+      ]
+    },
+    {
+      "unitName": "Napostella",
+      "meals": [
+        { "type": "lounas", "count": 8 }
+      ]
+    }
+  ]
+}
+
+### päivä 2
+POST http://localhost:3001/api/stats/daily
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFydHR1LnRhYXZldHRpQGdtYWlsLmNvbSIsImlhdCI6MTc3OTIxMjI1NiwiZXhwIjoxNzg2OTg4MjU2fQ.rO4eCYuB1U8FLWHD8owYa68XalvKbrCrZS8pGIg_l1I
+
+{
+  "date": "2025-05-19",
+  "units": [
+    {
+      "unitName": "Ilona",
+      "meals": [
+        { "type": "lounas", "count": 15 },
+        { "type": "puuro", "count": 6 }
+      ]
+    },
+    {
+      "unitName": "Napostella",
+      "meals": [
+        { "type": "lounas", "count": 10 }
+      ]
+    }
+  ]
+}
+
+### päivä 3
+POST http://localhost:3001/api/stats/daily
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFydHR1LnRhYXZldHRpQGdtYWlsLmNvbSIsImlhdCI6MTc3OTIxMjI1NiwiZXhwIjoxNzg2OTg4MjU2fQ.rO4eCYuB1U8FLWHD8owYa68XalvKbrCrZS8pGIg_l1I
+
+{
+  "date": "2025-05-20",
+  "units": [
+    {
+      "unitName": "Ilona",
+      "meals": [
+        { "type": "lounas", "count": 9 },
+        { "type": "puuro", "count": 4 }
+      ]
+    },
+    {
+      "unitName": "Napostella",
+      "meals": [
+        { "type": "lounas", "count": 7 }
+      ]
+    }
+  ]
+}
