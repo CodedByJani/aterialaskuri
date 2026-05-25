@@ -49,7 +49,7 @@ router.post("/magic-link", async (req, res) => {
     if (process.env.NODE_ENV !== "test") {
       await resend.emails.send({
         from: "Ruokailusovellus <onboarding@resend.dev>",
-        to: ["aterialaskuri.testi@gmail.com"],
+        to: [process.env.TEST_EMAIL || "aterialaskuri.testi@gmail.com"],
         subject: "Kirjautuminen ruokasovellukseen",
         html: `
                 <h2>Hei!</h2>
