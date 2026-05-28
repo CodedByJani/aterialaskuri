@@ -1,69 +1,102 @@
-const express = require('express')
-const router = express.Router()
-const crypto = require('crypto')
-const jwt = require('jsonwebtoken')
-const { Resend } = require('resend')
-const MagicToken = require('../models/MagicToken')
-const ActivityLog = require('../models/ActivityLog')
-// Muutin että resend on null testiympäristössä mutta muuten luodaan uusi
+const express = require("express");
+const router = express.Router();
+const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const { Resend } = require("resend");
+const MagicToken = require("../models/MagicToken");
+const ActivityLog = require("../models/ActivityLog");
+
+let lastMagicLinks = [];
+
+// Resend on null testiympäristössä
 const resend =
-    process.env.NODE_ENV === 'test'
-        ? null
-        : new Resend(process.env.RESEND_API_KEY)
+  process.env.NODE_ENV === "test"
+    ? null
+    : new Resend(process.env.RESEND_API_KEY);
 
-router.post('/magic-link', async (req, res) => {
-    const { email } = req.body
-    if (!email) return res.status(400).json({ error: "Sähköposti puuttuu" })
-    
-    try {
-        const token = crypto.randomBytes(32).toString('hex')
-        await MagicToken.create({ email, token })
+/**
+ * POST /api/auth/magic-link
+ * Sends a magic link to the provided email
+ */
+router.post("/magic-link", async (req, res) => {
+  const { email } = req.body;
 
-        const loginUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`
+  if (!email) {
+    return res.status(400).json({ error: "Sähköposti puuttuu" });
+  }
 
-        console.log("DEBUGGING: Link being sent is:", loginUrl)
-        
-        // Ettei resendiä luoda testiympäristössä
-        if (process.env.NODE_ENV !== 'test'){
-            // Tästä puuttui const result niin sovellus palautti virheen eikä gmailia lähetetty
-            const result = await resend.emails.send({
-                from: 'Ruokailusovellus <onboarding@resend.dev>',
-                to: [email],
-                subject: 'Kirjautuminen ruokasovellukseen',
-                text: `Hei!
-                
-                Voit kirjautua sisään sovellukseen klikkaamalla alla olevaa linkkiä.
-                Linkki on voimassa tunnin ajan.
-                
-                ${loginUrl}
-                
-                Jos et tilannut tätä viestiä, voit jättää sen huomiotta.`,
-            })
-            console.log("RESEND RESULT:", result)
-        }
-        res.json({ message: "Linkki lähetetty!" })
-    } catch (err) {
-        res.status(500).json({ error: err.message })
+  //if (!email.endsWith("@esedu.fi")) {
+  //return res.status(400).json({
+  //error: "Käytä esedu.fi sähköpostia",
+  //});
+  //}
+
+  try {
+    // Check if token already exists for this email (prevent spam)
+    //const existingToken = await MagicToken.findOne({ email });
+    //if (existingToken) {
+    //return res.status(429).json({
+    //error:
+    //"Linkki on jo lähetetty tälle sähköpostille. Yritä uudelleen 15 minuutin kuluttua.",
+    //});
+    //}
+
+    const token = crypto.randomBytes(32).toString("hex");
+    await MagicToken.create({ email, token });
+
+    const loginUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+
+    if (process.env.NODE_ENV === "test") {
+      lastMagicLinks.push(loginUrl);
     }
-})
 
-router.get('/verify', async (req, res) => {
-    const { token } = req.query
+    console.log("✅ Magic link sent");
 
-    if (token === "demo123") {
-        const sessionToken = jwt.sign(
-            { email: "testikäyttäjä@koulu.fi" },
-            process.env.JWT_SECRET
-        )
-
-        await ActivityLog.create({
-            email: "testikäyttäjä@koulu.fi",
-            action: 'LOGIN',
-            details: 'User signed in with demo login.'
-        })
-
-        return res.json({ token: sessionToken, email: "testikäyttäjä@koulu.fi" })
+    if (process.env.NODE_ENV !== "test") {
+      await resend.emails.send({
+        from: "Ruokailusovellus <onboarding@resend.dev>",
+        to: ["aterialaskuri.testi@gmail.com"],
+        subject: "Kirjautuminen ruokasovellukseen",
+        html: `
+                <h2>Hei!</h2>
+                <p>Voit kirjautua sisään sovellukseen klikkaamalla alla olevaa linkkiä.</p>
+                <p><strong>Linkki on voimassa tunnin ajan.</strong></p>
+                <p>
+                    <a href="${loginUrl}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                        Kirjaudu sisään
+                    </a>
+                </p>
+                <p>Tai kopioi tämä linkki selaimeen:</p>
+                <p><code>${loginUrl}</code></p>
+                <hr>
+                <p><small>Jos et tilannut tätä viestiä, voit jättää sen huomiotta.</small></p>
+            `,
+      });
     }
+
+    res.json({
+      message: "Kirjautumislinkki lähetetty sähköpostiisi",
+      email: email,
+    });
+  } catch (err) {
+    console.error("❌ Magic link error:", err.message);
+    res.status(500).json({
+      error:
+        "Sähköpostin lähettäminen epäonnistui. Yritä uudelleen hetken kuluttua.",
+    });
+  }
+});
+
+/**
+ * GET /api/auth/verify
+ * Verifies magic token and returns JWT
+ */
+router.get("/verify", async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).json({ error: "Linkki puuttuu" });
+  }
 
     try {
         const found = await MagicToken.findOne({ token })
@@ -79,11 +112,28 @@ router.get('/verify', async (req, res) => {
             details: 'User signed in with email.'
         })
 
-        res.json({ token: sessionToken, email: found.email })
-        console.log(sessionToken)
-    } catch (err) {
-        res.status(500).json({ error: err.message })
-    }
-})
+    console.log("✅ User logged in");
+
+    res.json({
+      token: sessionToken,
+      email: found.email,
+      expiresIn: "24h",
+    });
+  } catch (err) {
+    console.error("❌ Verify error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Kirjautuminen epäonnistui. Yritä uudelleen." });
+  }
+
+});
+
+if (process.env.NODE_ENV === "test") {
+  router.get("/test-last-link", (req, res) => {
+    res.json({
+      url: lastMagicLinks[lastMagicLinks.length - 1] || null,
+    });
+  });
+}
 
 module.exports = router

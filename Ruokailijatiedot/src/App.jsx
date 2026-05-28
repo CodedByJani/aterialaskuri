@@ -60,7 +60,10 @@ export default function App() {
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [reports, setReports] = useState({});
-
+  const [showOnlyLounas, setShowOnlyLounas] = useState(false);
+  useEffect(() => {
+    console.log("STATE WEEK:", reports);
+  }, [reports]);
 
   const today = new Date();
   today.setDate(today.getDate() + weekOffset * 7);
@@ -82,9 +85,10 @@ export default function App() {
     localStorage.removeItem("userEmail");
     window.location.reload();
   };
-
+  const latestFetchRef = useRef(0);
   useEffect(() => {
     const fetchWeek = async () => {
+      const fetchId = ++latestFetchRef.current;
       try {
         const token = localStorage.getItem("sessionToken");
         const res = await fetch(
@@ -126,7 +130,14 @@ export default function App() {
             });
           });
         });
-        setReports(prev => ({ ...prev, [weekKey]: weekObj }));
+        if (fetchId !== latestFetchRef.current) return;
+        setReports(prev => ({
+          ...prev,
+          [weekKey]: {
+            ...(prev[weekKey] || createEmptyWeek()),
+            ...weekObj
+          }
+        }));
       } catch (err) {
         console.error(err);
       }
@@ -134,68 +145,84 @@ export default function App() {
     fetchWeek();
   }, [weekOffset]);
 
-  const updateValue = async (dayName, restaurant, field, value) => {
-    setReports(prev => ({
-      ...prev,
-      [weekKey]: {
-        ...(prev[weekKey] || createEmptyWeek()),
-        [dayName]: {
-          ...((prev[weekKey] || createEmptyWeek())[dayName]),
-          [restaurant]: {
-            ...((prev[weekKey] || createEmptyWeek())[dayName][restaurant]),
-            [field]: value
+  const updateValue = (dayName, restaurant, field, value) => {
+    setReports(prev => {
+      const currentWeek = prev[weekKey] ?? createEmptyWeek();
+
+      return {
+        ...prev,
+        [weekKey]: {
+          ...currentWeek,
+          [dayName]: {
+            ...currentWeek[dayName],
+            [restaurant]: {
+              ...(currentWeek[dayName]?.[restaurant] ?? {}),
+              [field]: value
+            }
           }
         }
-      }
-    }));
-
-    const timeoutKey = `${dayName}-${restaurant}-${field}`
+      };
+    });
+  
+    // debounce backend update
+    const timeoutKey = `${dayName}-${restaurant}-${field}`;
 
     if (timeoutsRef.current[timeoutKey]) {
-      clearTimeout(timeoutsRef.current[timeoutKey])
+      clearTimeout(timeoutsRef.current[timeoutKey]);
     }
 
     timeoutsRef.current[timeoutKey] = setTimeout(async () => {
       const token = localStorage.getItem("sessionToken");
+
       const dayIndex = days.indexOf(dayName);
       const selectedDate = new Date(monday);
       selectedDate.setDate(monday.getDate() + dayIndex);
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/stats/update-count`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` })
-          },
-          body: JSON.stringify({
-            date: formatDate(selectedDate),
-            unitName: restaurant,
-            mealType: field,
-            newCount: Number(value)
-          })
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/stats/update-count`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token && { Authorization: `Bearer ${token}` })
+            },
+            body: JSON.stringify({
+              date: formatDate(selectedDate),
+              unitName: restaurant,
+              mealType: field,
+              newCount: value === "" ? null : Number(value)
+            })
+          }
+        );
+
+        if (!res.ok) throw new Error("Update failed");
+
+        toast.success("Tallennettu!", {
+          id: "tallennus-toast",
+          duration: 2000
         });
-        
-
-        if (!res.ok) throw new Error("Virhe palvelimella");
-
-        // Näytetään toast, mutta annetaan sille ID, jotta ruudulle ei tule montaa päällekkäistä viestiä
-        toast.success('Tallennettu!', { id: 'tallennus-toast', duration: 2000 });
-
       } catch (err) {
-        console.error("Failed to update backend:", err);
-        toast.error('Virhe tallennuksessa!', { id: 'tallennus-toast' });
+        console.error(err);
+        toast.error("Virhe tallennuksessa!", {
+          id: "tallennus-toast"
+        });
       }
-    }, 800)
+    }, 500);
   };
 
   const fieldTotals = getWeekFieldTotals(weekData);
+// Lisätty: suodatetaan näytettävät ravintolat ja ateriatyypit
+  const filteredRestaurants = showOnlyLounas
+    ? Object.fromEntries(Object.entries(restaurants).map(([k, v]) => [k, v.filter(f => f === "lounas")]))
+    : restaurants;
 
   return (
     <div className="app-container">
       <Toaster position="top-center" />
       <div className="app-header">
-        <h1>Ruokailijatiedot</h1>
+        {/* Lisätty ikoni otsikon viereen react-kirjastosta */}
+        <h1 data-testid="main-title">🍽️ Ruokailijatiedot</h1>
         <div>
           <button 
             onClick={() => navigate("/logs")}

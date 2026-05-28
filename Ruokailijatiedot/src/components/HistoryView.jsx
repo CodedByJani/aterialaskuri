@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 function formatDate(dateObj) {
   const y = dateObj.getFullYear();
@@ -12,6 +12,7 @@ function formatDate(dateObj) {
 export default function HistoryView() {
   const [searchParams] = useSearchParams();
   const unitName = searchParams.get("unitName");
+  const navigate = useNavigate();
 
   const today = new Date();
 
@@ -30,7 +31,6 @@ export default function HistoryView() {
   const getPreviousYearDate = (dateString) => {
     const date = new Date(dateString);
     date.setFullYear(date.getFullYear() - 1);
-
     return formatDate(date);
   };
 
@@ -93,52 +93,63 @@ export default function HistoryView() {
     if (unitName) {
       fetchHistory();
     }
-  }, [unitName]);
+  }, [unitName, startDate, endDate]);
 
   return (
     <div className="app-container">
       <h1>Historia: {unitName}</h1>
 
+      <div style={{ marginBottom: "10px" }}>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            backgroundColor: "#6b7280",
+            color: "white"
+          }}
+        >
+          Takaisin
+        </button>
+      </div>
+
       <div
         style={{
           display: "flex",
           gap: "10px",
-          marginBottom: "20px",
-          alignItems: "center"
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          marginBottom: "20px"
         }}
       >
         <div>
-          <label>Alkupäivä</label>
+          <label htmlFor="start-Date">Alkupäivä</label>
           <br />
           <input
             type="date"
+            id="start-Date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            style={{
-              width: "100px"
-            }}
+            style={{ width: "140px" }}
           />
         </div>
 
         <div>
-          <label>Loppupäivä</label>
+          <label htmlFor="end-Date">Loppupäivä</label>
           <br />
           <input
             type="date"
+            id="end-Date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            style={{
-              width: "100px"
-            }}
+            style={{ width: "140px" }}
           />
         </div>
 
         <button
           onClick={fetchHistory}
           style={{
-            marginTop: "20px",
             backgroundColor: "#2563eb",
-            color: "white"
+            color: "white",
+            height: "40px"
           }}
         >
           Hae historia
@@ -148,49 +159,51 @@ export default function HistoryView() {
       {loading ? (
         <p>Ladataan...</p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Päivä</th>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ minWidth: "600px" }}>
+            <thead>
+              <tr>
+                <th>Päivä</th>
 
-              <th>{startDate.slice(0, 4)}</th>
+                <th>{startDate.slice(0, 4)}</th>
 
-              <th>{Number(startDate.slice(0, 4)) - 1}</th>
-            </tr>
-          </thead>
+                <th>{Number(startDate.slice(0, 4)) - 1}</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {currentData.map((row, index) => {
-              const previousRow = previousData[index];
+            <tbody>
+              {currentData.map((row, index) => {
+                const previousRow = previousData[index];
 
-              return (
-                <tr key={row.date}>
-                  <td>{row.date}</td>
+                return (
+                  <tr key={row.date}>
+                    <td>{row.date}</td>
 
-                  <td>
-                    {row.meals.map((m, i) => (
-                      <div key={i}>
-                        {m.type}: {m.count}
-                      </div>
-                    ))}
-                  </td>
-
-                  <td>
-                    {previousRow ? (
-                      previousRow.meals.map((m, i) => (
+                    <td>
+                      {row.meals.map((m, i) => (
                         <div key={i}>
                           {m.type}: {m.count}
                         </div>
-                      ))
-                    ) : (
-                      <div>Ei dataa</div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      ))}
+                    </td>
+
+                    <td>
+                      {previousRow ? (
+                        previousRow.meals.map((m, i) => (
+                          <div key={i}>
+                            {m.type}: {m.count}
+                          </div>
+                        ))
+                      ) : (
+                        <div>Ei dataa</div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

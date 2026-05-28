@@ -21,26 +21,23 @@ router.get('/history', authToken, async (req, res) => {
         return res.status(400).json({ error: "Yksikkö on pakollinen parametri." });
     }
 
-    try {
-        const query = {};
+  try {
+    const query = {
+        "units.unitName": unitName
+    };
 
-        if (startDate && endDate) {
-            query.date = {
-                $gte: startDate,
-                $lte: endDate
-            };
-        }
+    if (startDate && endDate) {
+      query.date = { $gte: startDate, $lte: endDate } 
+    };
 
-        const stats = await DailyStat.find(query).sort({ date: 1 });
-
-        const history = stats.map(day => {
-            const unit = day.units.find(u => u.unitName === unitName);
-
-            return {
-                date: day.date,
-                meals: unit?.meals || []
-            };
-        });
+    const stats = await DailyStat.find(query).sort({ date: 1 });
+    const history = stats.map((day) => {
+      const unit = day.units.find((u) => u.unitName === unitName);
+      return {
+        date: day.date,
+        meals: unit?.meals || [],
+      };
+    });
 
         res.json(history);
 
@@ -69,7 +66,7 @@ router.patch('/update-count', authToken, async (req, res) => {
         return res.status(400).json({ error: "Puuttuvia kenttiä havaittu." })
     }
 
-    const parsedCount = Number(newCount)
+  const parsedCount = newCount === "" ? null : Number(newCount);
 
     if (isNaN(parsedCount) || parsedCount < 0) {
         return res.status(400).json({
@@ -93,11 +90,15 @@ router.patch('/update-count', authToken, async (req, res) => {
 
         let meal = unit.meals.find(m => m.type === mealType)
 
-        if (!meal) {
-            unit.meals.push({ type: mealType, count: parsedCount })
-        } else {
-            meal.count = parsedCount
-        }
+    if (parsedCount === null) {
+      if (meal) meal.count = 0;
+    } else {
+      if (!meal) {
+        unit.meals.push({ type: mealType, count: parsedCount });
+      } else {
+        meal.count = parsedCount;
+      }
+    }
 
         await dailyStat.save()
 

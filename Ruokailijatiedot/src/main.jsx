@@ -28,7 +28,7 @@ createRoot(document.getElementById('root')).render(
                 }
             />
             <Route
-                path="/history-view"
+                path="/history"
                 element={
                     <PrivateRoute>
                         <HistoryView />
