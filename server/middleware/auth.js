@@ -1,6 +1,12 @@
 const jwt = require("jsonwebtoken");
 
 const authToken = (req, res, next) => {
+  // Testiympäristössä ohitetaan autentikointi
+  if (process.env.NODE_ENV === "test") {
+    req.user = { email: "test@test.com" };
+    return next();
+  }
+
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -16,7 +22,6 @@ const authToken = (req, res, next) => {
         .status(401)
         .json({ error: "Virheellinen tai vanhentunut istunto." });
     }
-
     req.user = user;
     next();
   });

@@ -70,9 +70,9 @@ router.patch("/update-count", authToken, async (req, res) => {
     return res.status(400).json({ error: "Puuttuvia kenttiä havaittu." });
   }
 
-  const parsedCount = Number(newCount);
+  const parsedCount = newCount === "" ? null : Number(newCount);
 
-  if (isNaN(parsedCount) || parsedCount < 0) {
+  if (parsedCount !== null && (isNaN(parsedCount) || parsedCount < 0)) {
     return res.status(400).json({
       error: "Virheellinen syöte. Ole hyvä ja syötä vain numeroita.",
     });
@@ -94,10 +94,14 @@ router.patch("/update-count", authToken, async (req, res) => {
 
     let meal = unit.meals.find((m) => m.type === mealType);
 
-    if (!meal) {
-      unit.meals.push({ type: mealType, count: parsedCount });
+    if (parsedCount === null) {
+      if (meal) meal.count = 0;
     } else {
-      meal.count = parsedCount;
+      if (!meal) {
+        unit.meals.push({ type: mealType, count: parsedCount });
+      } else {
+        meal.count = parsedCount;
+      }
     }
 
     await dailyStat.save();

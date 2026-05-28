@@ -2,11 +2,9 @@ const path = require("path");
 const dotenv = require("dotenv");
 
 // Lataa oikea .env ympäristön mukaan
-if (process.env.NODE_ENV === "test") {
-  dotenv.config({ path: path.resolve(__dirname, ".env.test") });
-} else {
-  dotenv.config();
-}
+dotenv.config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+});
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -43,10 +41,7 @@ const connectDB = async () => {
   }
 };
 
-// Yhdistä vain kun ei testata
-if (process.env.NODE_ENV !== "test") {
-  connectDB();
-}
+connectDB();
 
 // Handle MongoDB disconnection
 mongoose.connection.on("disconnected", () => {
@@ -63,6 +58,12 @@ mongoose.connection.on("error", (err) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/stats", statsRoutes);
+
+// Testausta varten
+if (process.env.NODE_ENV === "test") {
+  const testingRoutes = require("./routes/testing");
+  app.use("/api/testing", testingRoutes);
+}
 
 /**
  * Health check endpoint
@@ -145,17 +146,16 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3001;
 
-// Käynnistä palvelin vain kun ei testata
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
+});
+
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
+
 if (process.env.NODE_ENV !== "test") {
-  const server = app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-    console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-  });
-
-  // ============================================
-  // GRACEFUL SHUTDOWN
-  // ============================================
-
   const gracefulShutdown = (signal) => {
     console.log(`\n📢 ${signal} received, shutting down gracefully...`);
 

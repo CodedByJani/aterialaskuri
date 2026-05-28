@@ -68,7 +68,7 @@ export default function AdminLogs() {
                 </button>
             </div>
 
-            <div className="logs-grid-container">
+            <div className="logs-grid-container" data-testid="logs-grid">
                 <DataGrid
                     rows={logs}
                     columns={columns}

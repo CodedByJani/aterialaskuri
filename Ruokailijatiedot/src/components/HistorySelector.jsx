@@ -1,16 +1,17 @@
+import { useNavigate } from "react-router-dom";
+
 export default function HistorySelector({
   restaurants,
   selectedUnit,
   setSelectedUnit,
   onClose
 }) {
+  const navigate = useNavigate();
+
   const handleOpen = () => {
     if (!selectedUnit) return;
-
-    window.open(
-      `/history-view?unitName=${encodeURIComponent(selectedUnit)}`,
-      "_blank"
-    );
+    // Ei aukea enää toisessa ikkunassa
+    navigate(`/history?unitName=${encodeURIComponent(selectedUnit)}`);
 
     setSelectedUnit("");
     onClose();

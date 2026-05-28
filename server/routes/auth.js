@@ -6,6 +6,9 @@ const { Resend } = require("resend");
 const MagicToken = require("../models/MagicToken");
 const ActivityLog = require("../models/ActivityLog");
 
+// Tallennetaan magic linkit testausta varten
+let lastMagicLinks = [];
+
 // Resend on null testiympäristössä
 const resend =
   process.env.NODE_ENV === "test"
@@ -43,6 +46,11 @@ router.post("/magic-link", async (req, res) => {
     await MagicToken.create({ email, token });
 
     const loginUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+
+    // Tallennetaan linkki testausta varten
+    if (process.env.NODE_ENV === "test") {
+      lastMagicLinks.push(loginUrl);
+    }
 
     console.log("✅ Magic link sent");
 
@@ -129,5 +137,14 @@ router.get("/verify", async (req, res) => {
       .json({ error: "Kirjautuminen epäonnistui. Yritä uudelleen." });
   }
 });
+
+// Testausta varten — palauttaa viimeisimmän magic linkin
+if (process.env.NODE_ENV === "test") {
+  router.get("/test-last-link", (req, res) => {
+    res.json({
+      url: lastMagicLinks[lastMagicLinks.length - 1] || null,
+    });
+  });
+}
 
 module.exports = router;
